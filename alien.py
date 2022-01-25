@@ -17,7 +17,7 @@ YELLOW = (210, 180, 140)
 #Constances
 SCR_WIDTH = 1280
 SCR_HEIGHT = 720
-GAME_SPEED = 10   #seconds between diff changes 30-standart                !!CHANGE!!
+GAME_SPEED = 30   #seconds between diff changes 30-standart                !!CHANGE!!
 
 #Var
 cur_scr = 0  #current screen
