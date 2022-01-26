@@ -1,7 +1,8 @@
 '''Pygame Goats and Wolves
 
-Control by mouse
+by AlmTheHedgehog - Tymofii Bereznytskyi
 '''
+from glob import glob
 import pygame
 import sys
 from pygame.display import set_mode
@@ -17,7 +18,7 @@ YELLOW = (210, 180, 140)
 #Constances
 SCR_WIDTH = 1280
 SCR_HEIGHT = 720
-GAME_SPEED = 30   #seconds between diff changes 30-standart                !!CHANGE!!
+GAME_SPEED = 10   #seconds between diff changes 30-standart                !!CHANGE!!
 
 #Var
 cur_scr = 0  #current screen
@@ -26,7 +27,9 @@ actors_list = []  #list of actors
 timer = 0  #timer for speed control
 creating_timer_zero = 0  #timer for enemies creating
 start_timer_zero = 0  #time of game start, add boss killing time
+supply_timer_zero = 0  #timer for sullpy
 boss_on_field = False  #True if boss on field
+supply_on_field = False  #True if supply on field
 boss_killing_time = 0 #time which was spent on killing
 killed_en = 0  #number of killed enemies
 killed_bosses = 0  #number of killed bosses
@@ -39,7 +42,7 @@ def game_start(skin):
     """
     global player_win, main_actor, actors_list, killed_bosses,\
         killed_en, creating_timer_zero, start_timer_zero,\
-        boss_on_field, boss_killing_time
+        boss_on_field, boss_killing_time, supply_on_field
     for act in actors_list:
         del act
     player_win = False
@@ -47,6 +50,7 @@ def game_start(skin):
     killed_bosses = 0
     boss_killing_time = 0
     boss_on_field = False
+    supply_on_field = False
     creating_timer_zero = pygame.time.get_ticks()//1000
     start_timer_zero = pygame.time.get_ticks()//1000
     main_actor = m_actor([(SCR_WIDTH/2)-40, SCR_HEIGHT-10], skin)
@@ -263,7 +267,8 @@ def boss_create(health, fast_speed):
 
 def enemies_creating():
     """Algorithm of creating enemies and difficulty control"""
-    global creating_timer_zero, boss_on_field, boss_killing_time, player_win, cur_scr
+    global creating_timer_zero, boss_on_field, boss_killing_time,\
+         player_win, cur_scr, supply_on_field
     if not boss_on_field:
         #creating enemies depens on time in game
         if ((pygame.time.get_ticks() / 1000) - start_timer_zero) < GAME_SPEED:
@@ -338,6 +343,13 @@ def enemies_creating():
             boss_enemies_creating("me", "me", True, True, 15, 2)  #fast boss - mid hp
         elif killed_bosses == 5:
             boss_enemies_creating("me", "me", True, True, 20, 1.5)  #fast boss - more hp
+    if (not supply_on_field) and ((pygame.time.get_ticks() // 1000) % (GAME_SPEED * 3)\
+         == 0) and ((pygame.time.get_ticks() // 1000) != 0):
+        if randint(0, 2) == 0:
+            supply_on_field = True
+            sup = supply("sm")
+            actors_list.append(sup)
+
 
 
 #classes
@@ -348,6 +360,7 @@ class actor():
         "me" - mid enemy
         "he" - hard enemy
         "ab" - ammo bullet
+        "sm" - supply multi shot
         coords for left bottom corner
     """
     def __init__(self, act, coords):
@@ -361,6 +374,8 @@ class actor():
             self.img = pygame.image.load("Python labs/final/pictures/enemies/hard.png")
         elif act == "ab":
             self.img = pygame.image.load("Python labs/final/pictures/ammo/bullet.png")
+        elif act == "sm":
+            self.img = pygame.image.load("Python labs/final/pictures/supply/multishot.png")
         self.type = act
         self.rect = self.img.get_rect()
         self.rect.bottomleft = coords
@@ -372,14 +387,25 @@ class m_actor(actor):
         super().__init__("m", coords)
         self.move_phase = 0
         self.skin = skin
+        self.supply = 0  #0-no, 1-multishot
         self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
     def shoot(self, stade):  #stade 0 - prepearing, 1 -shooting
+        if self.supply != 0:
+            if (pygame.time.get_ticks() / 1000) - supply_timer_zero > (GAME_SPEED/2):
+                self.supply = 0
         if stade == 0:
             self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_s.png")
         if stade == 1:
             self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
             bul = bullet([self.rect.left+35, self.rect.top+13])
             actors_list.append(bul)
+            if self.supply == 1:
+                bul0 = bullet([self.rect.left+35, self.rect.top+13])
+                bul0.vel_vector[0] = -1
+                actors_list.append(bul0)
+                bul1 = bullet([self.rect.left+35, self.rect.top+13])
+                bul1.vel_vector[0] = 1
+                actors_list.append(bul1)
     def move(self, in_move=1):
         if (self.vel_vector[0] < 0) and (self.rect.left >= win.left):
             self.rect = self.rect.move(self.vel_vector)
@@ -410,8 +436,29 @@ class bullet(actor):
         self.vel_vector = [0, -1]
     def move(self):
         self.rect = self.rect.move(self.vel_vector)
-        if self.rect.bottom <= win.top:
+        if not self.rect.colliderect(win):
             del actors_list[actors_list.index(self)]
+
+class supply(actor):
+    def __init__(self, act):
+        super().__init__(act, [randint(20, SCR_WIDTH - 20), 59])
+        self.vel_vector = [0, 1]
+    def move(self):
+        if (timer % 4) == 0:
+            self.rect = self.rect.move(self.vel_vector)
+        self.col_chk()
+    def col_chk(self):
+        global supply_timer_zero, supply_on_field
+        if self.rect.bottom > SCR_HEIGHT-100:
+            del actors_list[actors_list.index(self)]
+        for act in actors_list:
+            if act.type == "ab":
+                if self.rect.colliderect(act.rect):
+                    del actors_list[actors_list.index(self)]
+                    supply_on_field = False
+                    main_actor.supply = 1
+                    supply_timer_zero = (pygame.time.get_ticks() / 1000)
+
 
 class enemy(actor):
     def __init__(self, act, coordx, coordy=100, health = 0):  #health only for boss
