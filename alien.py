@@ -3,6 +3,7 @@
 by AlmTheHedgehog - Tymofii Bereznytskyi
 '''
 from glob import glob
+from multiprocessing.connection import deliver_challenge
 import pygame
 import sys
 from pygame.display import set_mode
@@ -126,7 +127,7 @@ def final_scr_event_processing():
                     (play_more_butt.right >= pos[0]):
                 cur_scr = 0
         if event.type == pygame.KEYUP:
-            if (event.key == pygame.K_SPACE) or (event.key == pygame.K_KP_ENTER):
+            if event.key == pygame.K_KP_ENTER:
                 cur_scr = 0
 
 
@@ -347,7 +348,10 @@ def enemies_creating():
          == 0) and ((pygame.time.get_ticks() // 1000) != 0):
         if randint(0, 2) == 0:
             supply_on_field = True
-            sup = supply("sm")
+            if randint(0, 2) == 0:
+                sup = supply("sm")
+            else:
+                sup = supply("sl")
             actors_list.append(sup)
 
 
@@ -361,6 +365,7 @@ class actor():
         "he" - hard enemy
         "ab" - ammo bullet
         "sm" - supply multi shot
+        "sl" - supply laser
         coords for left bottom corner
     """
     def __init__(self, act, coords):
@@ -374,8 +379,12 @@ class actor():
             self.img = pygame.image.load("Python labs/final/pictures/enemies/hard.png")
         elif act == "ab":
             self.img = pygame.image.load("Python labs/final/pictures/ammo/bullet.png")
+        elif act == "al":
+            self.img = pygame.image.load("Python labs/final/pictures/ammo/laser.png")
         elif act == "sm":
             self.img = pygame.image.load("Python labs/final/pictures/supply/multishot.png")
+        elif act == "sl":
+            self.img = pygame.image.load("Python labs/final/pictures/supply/laser.png")
         self.type = act
         self.rect = self.img.get_rect()
         self.rect.bottomleft = coords
@@ -397,13 +406,17 @@ class m_actor(actor):
             self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_s.png")
         if stade == 1:
             self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
-            bul = bullet([self.rect.left+35, self.rect.top+13])
-            actors_list.append(bul)
+            if self.supply == 2:
+                laser = bullet([self.rect.left+35, 635], "al")
+                actors_list.append(laser)
+            else:
+                bul = bullet([self.rect.left+35, self.rect.top+13], "ab")
+                actors_list.append(bul)
             if self.supply == 1:
-                bul0 = bullet([self.rect.left+35, self.rect.top+13])
+                bul0 = bullet([self.rect.left+35, self.rect.top+13], "ab")
                 bul0.vel_vector[0] = -1
                 actors_list.append(bul0)
-                bul1 = bullet([self.rect.left+35, self.rect.top+13])
+                bul1 = bullet([self.rect.left+35, self.rect.top+13], "ab")
                 bul1.vel_vector[0] = 1
                 actors_list.append(bul1)
     def move(self, in_move=1):
@@ -431,17 +444,30 @@ class m_actor(actor):
             self.img = pygame.transform.flip(self.img, True, False)
 
 class bullet(actor):
-    def __init__(self, coords):
-        super().__init__("ab", coords)
+    """bullets class type ab - bullet, al - laser"""
+    def __init__(self, coords, type):
+        super().__init__(type, coords)
         self.vel_vector = [0, -1]
+        if type == "al":
+            self.life_time = pygame.time.get_ticks() / 100
     def move(self):
-        self.rect = self.rect.move(self.vel_vector)
-        if not self.rect.colliderect(win):
-            del actors_list[actors_list.index(self)]
+        if self.type == "ab":
+            self.rect = self.rect.move(self.vel_vector)
+            if not self.rect.colliderect(win):
+                del actors_list[actors_list.index(self)]
+        elif self.type == "al":
+            self.del_laser()
+    def del_laser(self):
+        if ((pygame.time.get_ticks() / 100) - self.life_time) > 2:
+                for act in actors_list:
+                    if self.rect.colliderect(act.rect) and (act.type in ["le", "me", "he"]):
+                        act.lassered = False
+                del actors_list[actors_list.index(self)]
 
 class supply(actor):
+    """class for supplying boxes "sl"-laser, "sm"-multishot"""
     def __init__(self, act):
-        super().__init__(act, [randint(20, SCR_WIDTH - 20), 59])
+        super().__init__(act, [randint(20, SCR_WIDTH - 79), 59])
         self.vel_vector = [0, 1]
     def move(self):
         if (timer % 4) == 0:
@@ -450,13 +476,19 @@ class supply(actor):
     def col_chk(self):
         global supply_timer_zero, supply_on_field
         if self.rect.bottom > SCR_HEIGHT-100:
+            supply_on_field = False
             del actors_list[actors_list.index(self)]
         for act in actors_list:
-            if act.type == "ab":
+            if (act.type == "ab") or (act.type == "al"):
                 if self.rect.colliderect(act.rect):
                     del actors_list[actors_list.index(self)]
+                    if act.type == "ab":
+                        del actors_list[actors_list.index(act)] 
                     supply_on_field = False
-                    main_actor.supply = 1
+                    if self.type == "sm":
+                        main_actor.supply = 1
+                    elif self.type == "sl":
+                        main_actor.supply = 2
                     supply_timer_zero = (pygame.time.get_ticks() / 1000)
 
 
@@ -464,6 +496,7 @@ class enemy(actor):
     def __init__(self, act, coordx, coordy=100, health = 0):  #health only for boss
         super().__init__(act, [coordx, coordy])
         self.fast_enemy = False
+        self.lassered = False
         if act == "he":
             v = randint(-1, 1)
             while v == 0:
@@ -511,22 +544,24 @@ class enemy(actor):
         global start_timer_zero, boss_on_field, killed_bosses,  killed_en, creating_timer_zero
         #add colisions with another aliens
         for act in actors_list:
-            if act.type == "ab":
+            if (act.type == "ab") or (act.type == "al"):
                 if self.rect.colliderect(act.rect):
-                    self.health -= 1
-                    if self.health == 0:
-                        del actors_list[actors_list.index(act)]
-                        if self.type == "he":
-                            start_timer_zero += ((pygame.time.get_ticks() / 1000) - boss_killing_time)
-                            start_timer_zero -= 1
-                            boss_on_field = False
-                            killed_bosses += 1
-                            creating_timer_zero = pygame.time.get_ticks() / 1000
+                    if ((act.type == "al") and (self.lassered == False)) or (act.type == "ab"):
+                        self.health -= 1
+                        if act.type == "ab":
+                            del actors_list[actors_list.index(act)]
                         else:
-                            killed_en += 1
-                        del actors_list[actors_list.index(self)]
-                    else:
-                        del actors_list[actors_list.index(act)]
+                            self.lassered = True
+                        if self.health == 0:
+                            if self.type == "he":
+                                start_timer_zero += ((pygame.time.get_ticks() / 1000) - boss_killing_time)
+                                start_timer_zero -= 1
+                                boss_on_field = False
+                                killed_bosses += 1
+                                creating_timer_zero = pygame.time.get_ticks() / 1000
+                            else:
+                                killed_en += 1
+                            del actors_list[actors_list.index(self)]
 
 
 if __name__ == "__main__":
