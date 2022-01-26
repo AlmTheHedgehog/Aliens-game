@@ -1,5 +1,6 @@
-'''Pygame Goats and Wolves
+'''Aliens game
 
+everything(music, pictures, code)
 by AlmTheHedgehog - Tymofii Bereznytskyi
 '''
 import pygame
@@ -17,7 +18,7 @@ YELLOW = (255, 133, 40)
 #Constances
 SCR_WIDTH = 1280
 SCR_HEIGHT = 720
-GAME_SPEED = 10   #seconds between diff changes 30-standart                !!CHANGE!!
+GAME_SPEED = 30   #seconds between diff changes 30-standart             
 
 #Var
 cur_scr = 0  #current screen
@@ -67,7 +68,6 @@ def info_scr_event_processing():
                     >= pos[1]) and (back_butt.left <= pos[0]) and\
                     (back_butt.right >= pos[0]):
                 cur_scr = 0
-        
 
 def menu_event_processing():
     """event processing for menu """
@@ -81,17 +81,18 @@ def menu_event_processing():
                     >= pos[1]) and (play_butt_1.left <= pos[0]) and\
                     (play_butt_1.right >= pos[0]):
                 cur_scr = 1
+                mixer.main()
                 game_start(0)
             if (play_butt_2.top <= pos[1]) and (play_butt_2.bottom\
                     >= pos[1]) and (play_butt_2.left <= pos[0]) and\
                     (play_butt_2.right >= pos[0]):
                 cur_scr = 1
+                mixer.main()
                 game_start(1)
             if (info_butt.top <= pos[1]) and (info_butt.bottom\
                     >= pos[1]) and (info_butt.left <= pos[0]) and\
                     (info_butt.right >= pos[0]):
                 cur_scr = 3
-                
 
 def game_event_processing():
     """event processing for game"""
@@ -128,7 +129,6 @@ def final_scr_event_processing():
             if event.key == pygame.K_KP_ENTER:
                 cur_scr = 0
 
-
 def game_render():
     """game screen rendering"""
     global timer
@@ -149,8 +149,8 @@ def menu_render():
     pygame.draw.rect(scr, YELLOW, play_butt_1, 0, 50)
     pygame.draw.rect(scr, YELLOW, play_butt_2, 0, 50)
     pygame.draw.rect(scr, RED, info_butt, 0, 10)
-    img_m1 = pygame.image.load("Python labs/final/pictures/main_actor/0_m_prev.png")
-    img_m2 = pygame.image.load("Python labs/final/pictures/main_actor/1_m_prev.png")
+    img_m1 = pygame.image.load("pictures/main_actor/0_m_prev.png")
+    img_m2 = pygame.image.load("pictures/main_actor/1_m_prev.png")
     t_game_name = font_name.render("Aliens", True, BLUE)
     t_q = font_name.render("?", True, BLACK)
     scr.blit(t_game_name, (480, 50))
@@ -178,7 +178,7 @@ def final_scr_render():
 
 def info_scr_render():
     """information screen rendering"""
-    info_img = pygame.image.load("Python labs/final/pictures/info.png").convert()
+    info_img = pygame.image.load("pictures/info.png").convert()
     t_play = font.render("Back to the menu", True, GREEN)
     scr.blit(info_img, win)
     pygame.draw.rect(scr, BLACK, back_butt, 0, 40)
@@ -328,6 +328,7 @@ def enemies_creating():
         elif ((pygame.time.get_ticks() / 1000) - start_timer_zero) < ((GAME_SPEED*8)+7):
             player_win = True
             cur_scr = 2
+            mixer.intro_outro()
     else:
         #Creating enemies near the boss
         if killed_bosses == 0:
@@ -353,7 +354,6 @@ def enemies_creating():
             actors_list.append(sup)
 
 
-
 #classes
 class actor():
     """actor class 
@@ -368,21 +368,21 @@ class actor():
     """
     def __init__(self, act, coords):
         if act == "m":
-            self.img = pygame.image.load("Python labs/final/pictures/main_actor/0_m_wait_for_s.png")
+            self.img = pygame.image.load("pictures/main_actor/0_m_wait_for_s.png")
         elif act == "le":
-            self.img = pygame.image.load("Python labs/final/pictures/enemies/light.png")
+            self.img = pygame.image.load("pictures/enemies/light.png")
         elif act == "me":
-            self.img = pygame.image.load("Python labs/final/pictures/enemies/mide.png")
+            self.img = pygame.image.load("pictures/enemies/mide.png")
         elif act == "he":
-            self.img = pygame.image.load("Python labs/final/pictures/enemies/hard.png")
+            self.img = pygame.image.load("pictures/enemies/hard.png")
         elif act == "ab":
-            self.img = pygame.image.load("Python labs/final/pictures/ammo/bullet.png")
+            self.img = pygame.image.load("pictures/ammo/bullet.png")
         elif act == "al":
-            self.img = pygame.image.load("Python labs/final/pictures/ammo/laser.png")
+            self.img = pygame.image.load("pictures/ammo/laser.png")
         elif act == "sm":
-            self.img = pygame.image.load("Python labs/final/pictures/supply/multishot.png")
+            self.img = pygame.image.load("pictures/supply/multishot.png")
         elif act == "sl":
-            self.img = pygame.image.load("Python labs/final/pictures/supply/laser.png")
+            self.img = pygame.image.load("pictures/supply/laser.png")
         self.type = act
         self.rect = self.img.get_rect()
         self.rect.bottomleft = coords
@@ -395,15 +395,15 @@ class m_actor(actor):
         self.move_phase = 0
         self.skin = skin
         self.supply = 0  #0-no, 1-multishot
-        self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
+        self.img = pygame.image.load("pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
     def shoot(self, stade):  #stade 0 - prepearing, 1 -shooting
         if self.supply != 0:
             if (pygame.time.get_ticks() / 1000) - supply_timer_zero > (GAME_SPEED/2):
                 self.supply = 0
         if stade == 0:
-            self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_s.png")
+            self.img = pygame.image.load("pictures/main_actor/" + str(self.skin) + "_m_s.png")
         if stade == 1:
-            self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
+            self.img = pygame.image.load("pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
             if self.supply == 2:
                 laser = bullet([self.rect.left+35, 635], "al")
                 actors_list.append(laser)
@@ -425,16 +425,16 @@ class m_actor(actor):
             self.rect = self.rect.move(self.vel_vector)
             self.move_img_ch(1)
         if in_move == 0:
-            self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
+            self.img = pygame.image.load("pictures/main_actor/" + str(self.skin) + "_m_wait_for_s.png")
     def move_img_ch(self, side):  #side 0 - left, 1 - right
         if 0 <= self.move_phase < 15:
-            self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_move_1.png")
+            self.img = pygame.image.load("pictures/main_actor/" + str(self.skin) + "_m_move_1.png")
             self.move_phase += 1
         elif 15 <= self.move_phase < 30:
-            self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_move_2.png")
+            self.img = pygame.image.load("pictures/main_actor/" + str(self.skin) + "_m_move_2.png")
             self.move_phase += 1
         elif 30 <= self.move_phase < 45:
-            self.img = pygame.image.load("Python labs/final/pictures/main_actor/" + str(self.skin) + "_m_move_3.png")
+            self.img = pygame.image.load("pictures/main_actor/" + str(self.skin) + "_m_move_3.png")
             self.move_phase += 1
             if self.move_phase == 45:
                 self.move_phase = 0
@@ -448,6 +448,9 @@ class bullet(actor):
         self.vel_vector = [0, -1]
         if type == "al":
             self.life_time = pygame.time.get_ticks() / 100
+            mixer.laser_shot()
+        else:
+            mixer.bullet_shot()
     def move(self):
         if self.type == "ab":
             self.rect = self.rect.move(self.vel_vector)
@@ -489,8 +492,8 @@ class supply(actor):
                         main_actor.supply = 2
                     supply_timer_zero = (pygame.time.get_ticks() / 1000)
 
-
 class enemy(actor):
+    """enemies class"""
     def __init__(self, act, coordx, coordy=100, health = 0):  #health only for boss
         super().__init__(act, [coordx, coordy])
         self.fast_enemy = False
@@ -536,7 +539,8 @@ class enemy(actor):
                     ((self.type == "me") and ((timer % 4) == 0)):
                     self.rect = self.rect.move(self.vel_vector)
         if (self.rect.bottom >= SCR_HEIGHT-100):
-                cur_scr = 2           
+            cur_scr = 2
+            mixer.lose_g()
         self.check_col()
     def check_col(self):
         global start_timer_zero, boss_on_field, killed_bosses,  killed_en, creating_timer_zero
@@ -545,6 +549,7 @@ class enemy(actor):
             if (act.type == "ab") or (act.type == "al"):
                 if self.rect.colliderect(act.rect):
                     if ((act.type == "al") and (self.lassered == False)) or (act.type == "ab"):
+                        mixer.hit()
                         self.health -= 1
                         if act.type == "ab":
                             del actors_list[actors_list.index(act)]
@@ -561,20 +566,47 @@ class enemy(actor):
                                 killed_en += 1
                             del actors_list[actors_list.index(self)]
 
+class music():
+    """class for sound control"""
+    def __init__(self):
+        pygame.mixer.init()
+        self.main_t = "sounds/main_theme.wav"
+        self.start_t = "sounds/start_theme.wav"
+        self.lose = pygame.mixer.Sound("sounds/lose.wav")
+        self.laser = pygame.mixer.Sound("sounds/laser.wav")
+        self.bullet = pygame.mixer.Sound("sounds/bullet.wav")
+        self.destroy = pygame.mixer.Sound("sounds/destroy.wav")
+    def intro_outro(self):
+        pygame.mixer.music.load(self.start_t)
+        pygame.mixer.music.play(-1)
+    def main(self):
+        pygame.mixer.music.load(self.main_t)
+        pygame.mixer.music.play(-1)
+    def hit(self):
+        self.destroy.play()
+    def laser_shot(self):
+        self.laser.play()
+    def bullet_shot(self):
+        self.bullet.play()
+    def lose_g(self):
+        self.lose.play()
+        self.intro_outro()
+
 
 if __name__ == "__main__":
     pygame.init()
     
     #game objects creating
+    mixer = music()
+    mixer.intro_outro()
     fps = pygame.time.Clock()
     font_info = pygame.font.SysFont('Arial.TTF', 70)
     font = pygame.font.SysFont('Arial.TTF', 100)
     font_name = pygame.font.SysFont('Arial.TTF', 135)
     scr = pygame.display.set_mode((SCR_WIDTH, SCR_HEIGHT))
     win = pygame.Rect(0, 0, SCR_WIDTH, SCR_HEIGHT)
-    screen_img = pygame.image.load("Python labs/final/pictures/game_field.png").convert()
+    screen_img = pygame.image.load("pictures/game_field.png").convert()
     
-
     #menu objects creating
     play_butt_1 = pygame.Rect(SCR_WIDTH/5, SCR_HEIGHT/3,\
                             SCR_WIDTH/5, SCR_WIDTH/5)
