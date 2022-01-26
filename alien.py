@@ -2,8 +2,6 @@
 
 by AlmTheHedgehog - Tymofii Bereznytskyi
 '''
-from glob import glob
-from multiprocessing.connection import deliver_challenge
 import pygame
 import sys
 from pygame.display import set_mode
@@ -11,11 +9,11 @@ from random import randint
 
 #palette
 BLACK = (0, 0, 0)
-WHITE = (255, 228, 255)
-GREEN = (0, 128, 0)
+WHITE = (137, 186, 242)
+GREEN = (14, 142, 44)
 BLUE = (0, 0, 205)
 RED = (220, 20, 60)
-YELLOW = (210, 180, 140)
+YELLOW = (255, 133, 40)
 #Constances
 SCR_WIDTH = 1280
 SCR_HEIGHT = 720
@@ -65,9 +63,9 @@ def info_scr_event_processing():
             sys.exit()
         if event.type == pygame.MOUSEBUTTONUP:
             pos = pygame.mouse.get_pos()
-            if (play_more_butt.top <= pos[1]) and (play_more_butt.bottom\
-                    >= pos[1]) and (play_more_butt.left <= pos[0]) and\
-                    (play_more_butt.right >= pos[0]):
+            if (back_butt.top <= pos[1]) and (back_butt.bottom\
+                    >= pos[1]) and (back_butt.left <= pos[0]) and\
+                    (back_butt.right >= pos[0]):
                 cur_scr = 0
         
 
@@ -183,8 +181,8 @@ def info_scr_render():
     info_img = pygame.image.load("Python labs/final/pictures/info.png").convert()
     t_play = font.render("Back to the menu", True, GREEN)
     scr.blit(info_img, win)
-    pygame.draw.rect(scr, YELLOW, play_more_butt, 0, 50)
-    scr.blit(t_play, ((SCR_WIDTH/2) - 285, (SCR_HEIGHT*2/3) + 55))
+    pygame.draw.rect(scr, BLACK, back_butt, 0, 40)
+    scr.blit(t_play, ((SCR_WIDTH/2) - 285, (SCR_HEIGHT*3/4) + 65))
     pygame.display.flip()
 
 def boss_enemies_creating(enemy_t_1, enemy_t_2, enemy_1_fast, enemy_2_fast, max_en, deley):
@@ -326,7 +324,7 @@ def enemies_creating():
             else:
                 enemy_create("le", True, 1.1, 17)
         elif ((pygame.time.get_ticks() / 1000) - start_timer_zero) < ((GAME_SPEED*8)+6):
-            boss_create(35, True)  #5th boss
+            boss_create(35, True)  #6th boss
         elif ((pygame.time.get_ticks() / 1000) - start_timer_zero) < ((GAME_SPEED*8)+7):
             player_win = True
             cur_scr = 2
@@ -584,6 +582,8 @@ if __name__ == "__main__":
                             SCR_WIDTH/5, SCR_WIDTH/5)
     play_more_butt = pygame.Rect(SCR_WIDTH/4, SCR_HEIGHT*2/3,\
                             SCR_WIDTH/2, SCR_HEIGHT/4)
+    back_butt = pygame.Rect(SCR_WIDTH/4, SCR_HEIGHT*4/5,\
+                            SCR_WIDTH/2, SCR_HEIGHT/6)
     info_butt = pygame.Rect(SCR_WIDTH-100, 20, 80, 80)
 
     #main loop
